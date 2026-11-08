@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roll the Dice, Meet Jean-Michel!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Lilita+One&display=swap">
+<style>
+/* Layout: a goose-game track that spirals around a central sign panel on wide screens and becomes a zigzag trail on phones */
+:root{
+  --bg:#E5EBDF; --board:#D6E2CF; --surface:#FAFBF6; --ink:#1D2924; --muted:#56675F; --line:#BACAB2;
+  --road:#C9B788; --road-dash:#FFFCF2; --road-edge:#A8692B; --road-shade:transparent;
+  --board-veil:rgba(250,252,244,.08);
+  --hub:#173A30; --hub-ink:#F7F1DE; --hub-muted:#B5C9BC; --gold:#E7C45B;
+  --accent:#C8432F; --accent-ink:#FFFFFF;
+  --die:#FFFDF7; --die-edge:#D9D0BE; --pip:#22302A;
+  --term-bg:#0A1610; --term-fg:#86F0A2; --term-dim:#4F8A63;
+  --scrim:rgba(12,22,18,.58);
+  --shadow:0 1px 0 rgba(29,41,36,.06), 0 8px 18px -10px rgba(29,41,36,.35);
+  --f-display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --gap:22px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1512; --board:#16211C; --surface:#1C2823; --ink:#E4ECE7; --muted:#9DB0A6; --line:#2C3B34;
+    --road:#4A4029; --road-dash:#80704A; --road-edge:#4E3418; --road-shade:rgba(12,9,4,.42);
+    --board-veil:rgba(8,18,13,.68);
+    --hub:#1F3F35; --hub-ink:#F7F1DE; --hub-muted:#A9C0B3; --gold:#EBCB66;
+    --accent:#EE6650; --accent-ink:#1A0C09;
+    --die:#F4EFE3; --die-edge:#BFB59F; --pip:#1D2924;
+    --scrim:rgba(0,0,0,.66);
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 22px -12px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --board:#16211C; --surface:#1C2823; --ink:#E4ECE7; --muted:#9DB0A6; --line:#2C3B34;
+  --road:#4A4029; --road-dash:#80704A; --road-edge:#4E3418; --road-shade:rgba(12,9,4,.42);
+  --board-veil:rgba(8,18,13,.68);
+  --hub:#1F3F35; --hub-ink:#F7F1DE; --hub-muted:#A9C0B3; --gold:#EBCB66;
+  --accent:#EE6650; --accent-ink:#1A0C09;
+  --die:#F4EFE3; --die-edge:#BFB59F; --pip:#1D2924;
+  --scrim:rgba(0,0,0,.66);
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 22px -12px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:15px;
+  line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+main{max-width:1340px; margin:0 auto; padding-block:24px 32px; display:flex; flex-direction:column; gap:18px}
+html[data-compact] main{padding-block:14px calc(110px + env(safe-area-inset-bottom, 0px))}
+
+/* ---------- Board ---------- */
+.board{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(var(--cols, 8), minmax(0, 1fr));
+  grid-auto-rows:minmax(132px, auto);
+  gap:var(--gap);
+  padding:28px 22px 22px;
+  background:
+    linear-gradient(var(--board-veil), var(--board-veil)),
+    var(--board-img, none) 0 0 / 400px 400px repeat,
+    var(--board);
+  border-radius:26px;
+  box-shadow:inset 0 0 0 3px color-mix(in srgb, #3E6B2A 55%, var(--line)), inset 0 0 40px rgba(20,50,20,.22), var(--shadow);
+}
+html[data-compact] .board{grid-auto-rows:minmax(116px, auto); padding:24px 12px 14px; border-radius:20px; --gap:16px}
+.road{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible}
+.road path{fill:none; stroke-linejoin:round; stroke-linecap:round}
+.road .edge{stroke:var(--road-edge); stroke-width:48}
+.road .bed{stroke:var(--road); stroke-width:40}
+.road .shade{stroke:var(--road-shade); stroke-width:40}
+html[data-compact] .road .edge{stroke-width:38}
+html[data-compact] .road .bed,html[data-compact] .road .shade{stroke-width:31}
+
+/* ---------- Tiles ---------- */
+.tile{
+  --tc:#888; --tc-on:#fff;
+  position:relative; z-index:1; min-width:0;
+  display:flex; flex-direction:column;
+  padding:0;
+  text-align:left; font:inherit; color:var(--ink); cursor:pointer;
+  background:var(--surface);
+  border:3px solid var(--tc);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  transition:transform .16s ease, box-shadow .2s ease;
+}
+.tile:hover{transform:translateY(-3px) rotate(-.4deg)}
+.tile:focus-visible{outline:3px solid var(--accent); outline-offset:3px}
+.tile.is-here{box-shadow:0 0 0 4px var(--accent), 0 14px 28px -10px color-mix(in srgb, var(--accent) 70%, transparent)}
+
+/* painted frame drawn over the square (9-slice image, one per category) */
+.tile.has-frame{border:0; padding:12px; border-radius:9px}
+.tile.has-frame::after,.m-pic.has-frame::after{
+  content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+  border-style:solid; border-color:transparent; border-width:15px;
+  border-image-source:var(--frame-img); border-image-slice:40; border-image-width:15px; border-image-repeat:stretch;
+}
+.tile.has-frame .pic{border-radius:3px 3px 0 0}
+.tile.has-frame .txt{border-radius:0 0 3px 3px}
+.tile.has-frame.is-wide .pic{border-radius:3px 0 0 3px}
+.tile.has-frame.is-wide .txt{border-radius:0 3px 3px 0}
+
+/* picture area */
+.pic{position:relative; display:block; aspect-ratio:5 / 4; overflow:hidden; background:color-mix(in srgb, var(--tc) 22%, var(--surface))}
+.pic img{position:relative; z-index:1; width:100%; height:100%; object-fit:cover; display:block; transition:transform .45s ease}
+.pic.contain{background:var(--surface)}
+.pic.contain img{object-fit:contain; padding:10px}
+/* finish banner drawn over the last picture */
+.finish-banner{position:absolute; z-index:2; left:13%; right:1%; top:3px; pointer-events:none; filter:drop-shadow(0 3px 3px rgba(0,0,0,.3))}
+.finish-banner svg{display:block; width:100%; height:auto}
+.finish-banner text{font-family:var(--f-display); font-size:30px; letter-spacing:1.5px}
+.t-finish .pic.contain img{padding:30% 8% 5%}
+.t-finish .ttl{-webkit-line-clamp:3}
+.tile:hover .pic img{transform:scale(1.07)}
+.pic-ico{position:absolute; inset:0; display:grid; place-items:center; color:color-mix(in srgb, var(--tc) 72%, var(--ink))}
+.pic-ico svg{width:40%; height:40%}
+.pic .tile-top{position:absolute; z-index:2; top:6px; left:6px; right:6px}
+.when{position:absolute; z-index:2; left:6px; bottom:6px; max-width:calc(100% - 12px);
+  font:500 10.5px/1 var(--f-mono); letter-spacing:.02em; font-variant-numeric:tabular-nums;
+  padding:4px 7px; border-radius:6px; background:rgba(16,24,20,.78); color:#F7F4EA;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+
+/* text area */
+.txt{flex:1; display:flex; flex-direction:column; gap:3px; padding:8px 10px 10px;
+  background:color-mix(in srgb, var(--tc) 13%, var(--surface)); border-top:2px solid color-mix(in srgb, var(--tc) 55%, var(--surface))}
+.tile.is-visited .txt{background:color-mix(in srgb, var(--tc) 26%, var(--surface))}
+.no-pic .txt{border-top:0; padding:10px 11px 12px; gap:5px}
+
+.tile-top{display:flex; align-items:center; gap:6px; min-height:28px}
+.num{
+  flex:none; min-width:28px; height:28px; padding:0 6px; border-radius:999px;
+  display:grid; place-items:center;
+  background:var(--tc); color:var(--tc-on);
+  box-shadow:0 0 0 2px var(--surface), 0 2px 6px rgba(0,0,0,.25);
+  font-family:var(--f-display); font-size:15px; letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;
+}
+.chip{font:600 10px/1 var(--f-mono); letter-spacing:.12em; padding:5px 7px; border-radius:5px; background:var(--ink); color:var(--surface); box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.ico{flex:none; margin-left:auto; width:26px; height:26px; color:color-mix(in srgb, var(--tc) 72%, var(--ink))}
+.ico svg{width:100%; height:100%; display:block}
+.date{font:500 11px/1.3 var(--f-mono); color:var(--muted); letter-spacing:.02em; font-variant-numeric:tabular-nums}
+.ttl{font-weight:700; font-size:14px; line-height:1.2; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; text-wrap:balance}
+.sub{font-size:12px; line-height:1.25; color:var(--muted); display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden}
+.t-start .ttl,.t-finish .ttl{font-family:var(--f-display); font-weight:400; font-size:clamp(17px, 1.6vw, 22px); letter-spacing:.01em}
+
+/* the finish square spans several columns on wide boards: picture beside the text */
+.tile.is-wide{flex-direction:row}
+.tile.is-wide .pic{flex:none; width:40%; aspect-ratio:auto; align-self:stretch}
+.tile.is-wide .txt{justify-content:center; padding:16px 20px; border-top:0; border-left:2px solid color-mix(in srgb, var(--tc) 55%, var(--surface))}
+.tile.is-wide .ttl{font-size:clamp(20px, 2vw, 28px); -webkit-line-clamp:3}
+.tile.is-wide .sub{font-size:14px; -webkit-line-clamp:2}
+
+/* ---------- Pawn ---------- */
+.pawn{position:absolute; left:0; top:0; z-index:5; width:34px; height:46px; pointer-events:none;
+  transition:transform .34s cubic-bezier(.3,.7,.3,1)}
+.pawn svg{width:100%; height:100%; display:block; overflow:visible}
+.pawn.hop .pawn-body{animation:hop .34s ease-out}
+.pawn.is-pic{width:56px; height:82px}
+html[data-compact] .pawn.is-pic{width:44px; height:65px}
+.pawn-pic{display:block; width:100%; height:100%; transform-origin:50% 100%}
+.pawn-pic img{display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 6px 4px rgba(0,0,0,.38))}
+@keyframes hop{0%{transform:translateY(0)} 45%{transform:translateY(-18px)} 100%{transform:translateY(0)}}
+
+/* ---------- Hub (centre panel) ---------- */
+.hub{
+  position:relative; z-index:2; min-width:0;
+  display:flex; flex-direction:column; justify-content:center; gap:18px;
+  padding:22px 26px;
+  background-color:var(--hub); color:var(--hub-ink);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--hub) 90%, transparent) 0%, color-mix(in srgb, var(--hub) 62%, transparent) 38%, transparent 66%),
+    linear-gradient(0deg, color-mix(in srgb, var(--hub) 82%, transparent) 0%, transparent 48%),
+    var(--hub-img, none);
+  background-size:cover;
+  background-position:center;
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:inset 0 0 0 3px color-mix(in srgb, var(--gold) 40%, transparent), var(--shadow);
+}
+html[data-compact] .hub{padding:18px; gap:14px; background-position:72% center;
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--hub) 82%, transparent) 0%, color-mix(in srgb, var(--hub) 45%, transparent) 55%, color-mix(in srgb, var(--hub) 85%, transparent) 100%),
+    var(--hub-img, none)}
+.hub > header{max-width:min(560px, 58%)}
+html[data-compact] .hub > header{max-width:none}
+.eyebrow{margin:0 0 6px; font:500 11.5px/1.3 var(--f-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--hub-muted)}
+.hub h1{text-shadow:0 2px 14px rgba(0,0,0,.35); margin:0; font-family:var(--f-display); font-weight:400; font-size:clamp(28px, 3.3vw, 48px); line-height:1.02; letter-spacing:.005em; text-wrap:balance}
+.hub h1 span{color:var(--gold)}
+.subtitle{margin:8px 0 0; color:var(--hub-ink); opacity:.88; font-size:15.5px; text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.hub-body{display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(0, 1fr); gap:20px; align-items:center}
+html[data-compact] .hub-body{grid-template-columns:minmax(0, 1fr)}
+
+.controls{display:flex; align-items:center; gap:16px; min-width:0}
+html[data-compact] .controls{
+  position:fixed; left:0; right:0; bottom:0; z-index:20; gap:12px;
+  background:var(--hub);
+  padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  box-shadow:0 -10px 26px -14px rgba(0,0,0,.6), inset 0 3px 0 color-mix(in srgb, var(--gold) 40%, transparent);
+}
+.ctrl-main{min-width:0; flex:1}
+.btn-row{display:flex; flex-wrap:wrap; gap:8px}
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  font:700 14px/1 var(--f-body); padding:11px 16px; border-radius:999px;
+  border:2px solid transparent; cursor:pointer; white-space:nowrap;
+  transition:transform .08s ease, opacity .2s;
+}
+.btn svg{width:16px; height:16px}
+.btn:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+.btn-primary{background:var(--accent); color:var(--accent-ink); box-shadow:0 3px 0 color-mix(in srgb, var(--accent) 55%, #000)}
+.btn-primary:active{transform:translateY(2px); box-shadow:0 1px 0 color-mix(in srgb, var(--accent) 55%, #000)}
+.btn-soft{background:color-mix(in srgb, var(--hub-ink) 10%, transparent); color:var(--hub-ink); border-color:color-mix(in srgb, var(--hub-ink) 28%, transparent)}
+.btn-ghost{background:transparent; color:var(--hub-muted); padding-inline:10px}
+.btn:disabled{opacity:.45; cursor:not-allowed; transform:none}
+html[data-compact] .btn{padding:10px 13px; font-size:13.5px}
+html[data-compact] .btn-ghost .lbl{display:none}
+.status{margin:10px 0 0; font-size:13.5px; color:var(--hub-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.status b{color:var(--hub-ink)}
+html[data-compact] .status{margin-top:7px; font-size:12.5px}
+
+.terminal{
+  list-style:none; margin:0; padding:12px 14px; min-width:0; min-height:104px;
+  background:color-mix(in srgb, var(--term-bg) 84%, transparent); color:var(--term-dim);
+  box-shadow:0 10px 24px -12px rgba(0,0,0,.6);
+  border-radius:10px; border:1px solid color-mix(in srgb, var(--term-fg) 22%, transparent);
+  font:12px/1.6 var(--f-mono);
+  display:flex; flex-direction:column; justify-content:flex-end;
+}
+.terminal li{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.terminal li:last-child{color:var(--term-fg)}
+.terminal li:last-child::after{content:"\2588"; margin-left:3px; animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- Die ---------- */
+.die-btn{--d:62px; flex:none; background:none; border:0; padding:8px; cursor:pointer; border-radius:16px}
+.die-btn:focus-visible{outline:3px solid var(--gold)}
+.die-btn:disabled{cursor:progress}
+html[data-compact] .die-btn{--d:42px; padding:4px}
+.die-scene{display:block; width:var(--d); height:var(--d); perspective:520px}
+.die-tilt{display:block; width:100%; height:100%; transform-style:preserve-3d; transform:rotateX(-20deg) rotateY(-26deg)}
+.cube{display:block; position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform 1s cubic-bezier(.16,.68,.22,1)}
+.face{
+  position:absolute; inset:0; background:var(--die); border-radius:20%;
+  box-shadow:inset 0 0 0 1.5px var(--die-edge), inset 0 -5px 9px rgba(0,0,0,.08);
+  display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(3, 1fr); padding:15%;
+  backface-visibility:hidden;
+}
+.pip{width:74%; height:74%; border-radius:50%; background:var(--pip); place-self:center}
+.f1 .pip{width:95%; height:95%; background:var(--accent)}
+.f1{transform:rotateY(0deg) translateZ(calc(var(--d) / 2))}
+.f6{transform:rotateY(180deg) translateZ(calc(var(--d) / 2))}
+.f2{transform:rotateY(90deg) translateZ(calc(var(--d) / 2))}
+.f5{transform:rotateY(-90deg) translateZ(calc(var(--d) / 2))}
+.f3{transform:rotateX(90deg) translateZ(calc(var(--d) / 2))}
+.f4{transform:rotateX(-90deg) translateZ(calc(var(--d) / 2))}
+
+/* ---------- Legend ---------- */
+.legend{display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; justify-content:space-between}
+.legend ul{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px}
+.legend li{display:inline-flex; align-items:center; gap:7px; padding:6px 12px 6px 8px; border-radius:999px; background:var(--surface); box-shadow:inset 0 0 0 1.5px var(--line); font-size:13px; font-weight:700}
+.legend .dot{width:14px; height:14px; border-radius:50%; background:var(--c)}
+.hint{margin:0; color:var(--muted); font-size:13px}
+kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; background:var(--surface); box-shadow:inset 0 0 0 1px var(--line), 0 1px 0 var(--line)}
+
+/* ---------- Story card (modal) ---------- */
+.overlay{position:fixed; inset:0; z-index:40; background:var(--scrim); display:grid; place-items:center;
+  padding:max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  animation:fade .18s ease-out}
+.sheet{--tc:#888; --tc-on:#fff; width:min(580px, 100%); max-height:min(88vh, 720px); display:flex; flex-direction:column;
+  background:var(--surface); color:var(--ink); border-radius:22px; overflow:hidden;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.55), inset 0 0 0 2px color-mix(in srgb, var(--tc) 50%, var(--surface));
+  animation:pop .26s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0; transform:translateY(14px) scale(.96)}}
+.band{display:flex; align-items:center; gap:10px; padding:12px 12px 12px 20px; background:var(--tc); color:var(--tc-on)}
+.band .m-num{font-family:var(--f-display); font-size:18px; letter-spacing:.02em; font-variant-numeric:tabular-nums}
+.band .m-type{font:600 11px/1 var(--f-mono); letter-spacing:.14em; text-transform:uppercase; opacity:.85}
+.icon-btn{margin-left:auto; width:38px; height:38px; display:grid; place-items:center; border-radius:50%; border:0; cursor:pointer;
+  background:color-mix(in srgb, var(--tc-on) 16%, transparent); color:inherit}
+.icon-btn svg{width:18px; height:18px}
+.icon-btn:focus-visible{outline:3px solid var(--tc-on); outline-offset:2px}
+.sheet-body{padding:22px 24px 8px; overflow:auto; min-height:0}
+.m-head{display:flex; align-items:center; gap:14px; margin-bottom:12px}
+.m-ico{flex:none; width:56px; height:56px; border-radius:16px; display:grid; place-items:center;
+  background:color-mix(in srgb, var(--tc) 18%, var(--surface)); color:color-mix(in srgb, var(--tc) 72%, var(--ink));
+  box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--tc) 45%, var(--surface))}
+.m-ico svg{width:32px; height:32px}
+.m-head.has-pic{align-items:flex-end; gap:18px; margin-bottom:16px}
+.m-pic{flex:none; width:clamp(120px, 36%, 210px); margin:0; border-radius:14px; overflow:hidden;
+  border:3px solid var(--tc); box-shadow:var(--shadow); transform:rotate(-1.5deg)}
+.m-pic img{display:block; width:100%; height:auto}
+.m-pic.has-frame{position:relative; border:0; padding:11px; border-radius:9px; background:var(--surface)}
+.m-pic.has-frame::after{border-width:14px; border-image-width:14px}
+.m-pic.has-frame img{border-radius:3px}
+.m-date{margin:0; font:500 12.5px/1.4 var(--f-mono); color:var(--muted)}
+.m-title{margin:2px 0 0; font-family:var(--f-display); font-weight:400; font-size:clamp(24px, 4vw, 31px); line-height:1.08; text-wrap:balance}
+.m-sub{margin:0 0 10px; font-weight:700; color:color-mix(in srgb, var(--tc) 60%, var(--ink))}
+.m-text{margin:0; font-size:16px; line-height:1.62; max-width:62ch}
+.m-text a{color:var(--accent); text-underline-offset:3px; word-break:break-all}
+.sheet-foot{display:flex; align-items:center; gap:8px; padding:14px 18px 18px; flex-wrap:wrap}
+.sheet-foot .spacer{flex:1}
+.nav-btn{width:40px; height:40px; display:grid; place-items:center; border-radius:50%; cursor:pointer; background:transparent; color:var(--ink); border:2px solid var(--line)}
+.nav-btn svg{width:18px; height:18px}
+.nav-btn:disabled{opacity:.35; cursor:not-allowed}
+.nav-btn:focus-visible,.sheet .btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.sheet .btn-soft{color:var(--ink); background:transparent; border-color:var(--line)}
+
+#confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:60}
+
+@media (prefers-reduced-motion: reduce){
+  .cube,.pawn,.tile{transition:none}
+  .pawn.hop .pawn-body{animation:none}
+  .overlay,.sheet{animation:none}
+  .terminal li:last-child::after{animation:none}
+}
+</style>
+<style>html,body{margin:0}</style>
+</head>
+<body>
+<main>
+  <div class="board" id="board">
+    <svg class="road" id="road" aria-hidden="true"><defs><pattern id="cobble" patternUnits="userSpaceOnUse" width="112" height="112"><image id="cobbleImg" width="112" height="112" preserveAspectRatio="none"/></pattern></defs><path class="edge" id="roadEdge"/><path class="bed" id="roadBed"/><path class="shade" id="roadShade"/></svg>
+
+    <section class="hub" id="hub" aria-label="Game controls">
+      <header>
+        <p class="eyebrow" id="eyebrow"></p>
+        <h1 id="title"></h1>
+        <p class="subtitle" id="subtitle"></p>
+      </header>
+      <div class="hub-body">
+        <div class="controls">
+          <button class="die-btn" id="dieBtn" type="button" aria-label="Roll the dice">
+            <span class="die-scene"><span class="die-tilt"><span class="cube" id="cube"></span></span></span>
+          </button>
+          <div class="ctrl-main">
+            <div class="btn-row">
+              <button class="btn btn-primary" id="rollBtn" type="button">Roll the dice</button>
+              <button class="btn btn-soft" id="stepBtn" type="button">Next square</button>
+              <button class="btn btn-ghost" id="resetBtn" type="button" aria-label="Restart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v4.5H8"/></svg>
+                <span class="lbl">Restart</span>
+              </button>
+            </div>
+            <p class="status" id="status" aria-live="polite"></p>
+          </div>
+        </div>
+        <ol class="terminal" id="term" aria-label="Job log"></ol>
+      </div>
+    </section>
+
+    <div class="pawn" id="pawn" aria-hidden="true">
+      <span class="pawn-body pawn-pic" id="pawnPic" hidden><img id="pawnImg" alt=""></span>
+      <svg id="pawnSvg" viewBox="0 0 34 46"><g class="pawn-body">
+        <ellipse cx="17" cy="43" rx="13" ry="3" fill="rgba(0,0,0,.25)"/>
+        <path d="M5 41.5C5 34 9.5 30 13.5 28.3 11.8 26.6 11.3 24.3 12.4 22h9.2c1.1 2.3.6 4.6-1.1 6.3C24.5 30 29 34 29 41.5z" fill="var(--accent)" stroke="color-mix(in srgb, var(--accent) 60%, #000)" stroke-width="1.4"/>
+        <ellipse cx="17" cy="22" rx="7.5" ry="2.4" fill="var(--accent)" stroke="color-mix(in srgb, var(--accent) 60%, #000)" stroke-width="1.4"/>
+        <circle cx="17" cy="11" r="8" fill="var(--accent)" stroke="color-mix(in srgb, var(--accent) 60%, #000)" stroke-width="1.4"/>
+        <circle cx="14" cy="8" r="2.6" fill="#fff" opacity=".55"/>
+        <path d="M9 37c1-3 3-5 5-6" stroke="#fff" stroke-opacity=".45" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </g></svg>
+    </div>
+  </div>
+
+  <footer class="legend">
+    <ul id="legend" aria-label="Square types"></ul>
+    <p class="hint">Click any square to read its story · <kbd>Space</kbd> rolls · <kbd>→</kbd> moves one square</p>
+  </footer>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="band">
+      <span class="m-num" id="mNum"></span>
+      <span class="m-type" id="mType"></span>
+      <button class="icon-btn" id="mClose" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="m-head" id="mHead">
+        <figure class="m-pic" id="mPic" hidden><img id="mImg" alt=""></figure>
+        <div class="m-ico" id="mIco"></div>
+        <div>
+          <p class="m-date" id="mDate"></p>
+          <h2 class="m-title" id="mTitle"></h2>
+        </div>
+      </div>
+      <p class="m-sub" id="mSub"></p>
+      <p class="m-text" id="mText"></p>
+    </div>
+    <div class="sheet-foot">
+      <button class="nav-btn" id="mPrev" type="button" aria-label="Previous square"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="nav-btn" id="mNext" type="button" aria-label="Next square"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      <span class="spacer"></span>
+      <button class="btn btn-soft" id="mDone" type="button">Close</button>
+      <button class="btn btn-primary" id="mRoll" type="button">Roll the dice</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti" hidden></canvas>
+
+<!-- Board content: edit this JSON to change the squares. Order follows the "next" links. -->
+<script type="application/json" id="board-data">
+{
+  "board": {
+    "title": "Roll the Dice, Meet Jean-Michel!",
+    "subtitle": "A journey through my professional and personal life",
+    "language": "en",
+    "start": { "date": "1971-01-21", "label": "Born" },
+    "finish": { "date": "2026-12-15", "label": "Joining Arcad Software" },
+    "direction": "follow_next_links",
+    "movement": "forward_only",
+    "hub_image": "images/hub.webp",
+    "path_image": "images/path.webp",
+    "board_image": "images/board.webp",
+    "pawn_image": "images/pawn.webp"
+  },
+  "style": {
+    "education": { "color": "#397BC5", "label": "Education", "frame": "images/frames/education.webp" },
+    "professional": { "color": "#E69A35", "label": "Professional life", "frame": "images/frames/professional.webp" },
+    "hobby": { "color": "#54A66A", "label": "Hobbies", "frame": "images/frames/hobby.webp" },
+    "personal_project": { "color": "#9872B9", "label": "Personal projects", "frame": "images/frames/personal_project.webp" },
+    "start": { "color": "#E7C45B", "label": "Start", "frame": "images/frames/gold.webp" },
+    "finish": { "color": "#E7C45B", "label": "Finish", "frame": "images/frames/gold.webp" }
+  },
+  "tiles": [
+    { "id": 1, "image": "images/01.webp", "type": "start", "date": "1971-01-21", "title": "Born!", "description": "January 21, 1971", "next": 2,
+      "full_description": "Jean-Michel was born on 21 January 1971. This is the starting point of the journey: the first square on the board and the beginning of the story." },
+    { "id": 2, "image": "images/02.webp", "type": "education", "date": "1989", "title": "Baccalauréat série C", "description": "Scientific baccalaureate (mathematics and physics)", "next": 3,
+      "full_description": "In 1989, Jean-Michel earned his Baccalauréat série C, the French scientific baccalaureate with a strong emphasis on mathematics and physics. It opened the door to his university studies." },
+    { "id": 3, "image": "images/03.webp", "type": "education", "date": "1992", "title": "DEUG A", "description": "Science and structures of matter", "next": 4,
+      "full_description": "In 1992, Jean-Michel completed a DEUG A in Science and Structures of Matter. This was his first university qualification, before moving towards computer science." },
+    { "id": 4, "image": "images/04.webp", "type": "hobby", "date": "Ages 6–25", "title": "Tennis", "description": "Played tennis from the age of 6 to 25.", "next": 5,
+      "full_description": "Jean-Michel played tennis for almost two decades, from the age of 6 until he was 25. It was a long-standing sporting passion that accompanied his childhood, his studies and the start of his career." },
+    { "id": 5, "image": "images/05.webp", "type": "education", "date": "1994", "title": "Bachelor's and Master's degrees", "description": "Computer Science", "next": 6,
+      "full_description": "In 1994, he obtained a Licence and a Maîtrise in Computer Science. These studies provided the academic foundation for his future career in software development and IT project work." },
+    { "id": 6, "image": "images/06.webp", "type": "professional", "date": "1995–1996", "title": "Novosoft International", "description": "Software developer. Worked on the educational software “Tout le primaire” for Windows, using C++ and Delphi.", "next": 7,
+      "full_description": "From May 1995 to March 1996, Jean-Michel worked as a software developer at Novosoft International. He contributed to the development of “Tout le primaire”, educational software for Windows, using C++ and Delphi. The product is described here: https://www.novosoft-online.com/produits_fr.htm#tlp" },
+    { "id": 7, "image": "images/07.webp", "type": "professional", "date": "1996–1998", "title": "CGI / IBM Global Services", "description": "Designer-developer. Built batch and transactional processes for SIMBASE, a securities back-office package, using PACBASE, COBOL and AS/400.", "next": 8,
+      "full_description": "From April 1996 to April 1998, he worked as a designer-developer for CGI / IBM Global Services. He designed and developed batch and transactional processes for SIMBASE, a securities back-office package, using PACBASE, COBOL and AS/400." },
+    { "id": 8, "image": "images/08.webp", "type": "professional", "date": "1998–2001", "title": "Natexis Banques Populaires", "description": "Application manager and project manager. Led a five-person team, worked on Java projects including e-Bonds and LineBourse Warrants, and contributed to FX-rate reference data and back-office processes related to the euro changeover.", "next": 9,
+      "full_description": "From May 1998 to November 2001, he was an application manager and project manager at Natexis Banques Populaires, leading a team of five. His work included Java projects such as e-Bonds and LineBourse Warrants, the foreign-exchange reference data system, and back-office processing related to the transition to the euro." },
+    { "id": 9, "image": "images/09.webp", "type": "hobby", "date": "Ongoing", "title": "DIY & home renovation", "description": "Enjoys DIY and is renovating his house.", "next": 10,
+      "full_description": "Jean-Michel enjoys DIY and is currently renovating his house. Hands-on projects give him a tangible, creative counterpart to his work in software." },
+    { "id": 10, "image": "images/10.webp", "type": "professional", "date": "2001–2003", "title": "Groupe Caisse des Dépôts", "description": "Business analysis, architecture, support and quality. Organized testing for shared functions, supported PAC/TRANSFER, PACBASE and WebSphere Java, and studied the redesign of securities reference data.", "next": 11,
+      "full_description": "From November 2001 to November 2003, he worked at Groupe Caisse des Dépôts across business analysis, architecture, support and quality. He organized testing for shared application functions, supported PAC/TRANSFER, PACBASE and WebSphere Java, and studied the functional and technical redesign of securities reference data following the split between CDC IXIS and the public institution." },
+    { "id": 11, "image": "images/11.webp", "type": "professional", "date": "December 2003–March 2004", "title": "Société Générale CIB", "description": "Junior project manager. Supervised development of a monitoring tool and log parser, from detailed analysis and framework redesign through implementation and acceptance.", "next": 12,
+      "full_description": "From December 2003 to March 2004, he was a junior project manager at Société Générale Corporate & Investment Banking. He supervised the development of a monitoring tool and a log parser, covering detailed analysis, framework redesign, implementation and acceptance testing." },
+    { "id": 12, "image": "images/12.webp", "type": "professional", "date": "May 2004–June 2005", "title": "Natexis Banques Populaires", "description": "Project manager for Basel II rating engines. Analyzed the professional retail rating project and managed delivery, vendor selection, testing and acceptance.", "next": 13,
+      "full_description": "From May 2004 to June 2005, he was a project manager at Natexis Banques Populaires on Basel II rating engines. He analyzed the professional retail rating project, helped select the service provider, monitored delivery, and organized testing and acceptance." },
+    { "id": 13, "image": "images/13.webp", "type": "professional", "date": "June 2005–June 2009", "title": "Crédit Foncier", "description": "Project manager for risk, guarantees, Basel II and business intelligence. Led application work, test planning and a team of four developers.", "next": 14,
+      "full_description": "From June 2005 to June 2009, he managed projects at Crédit Foncier involving risk management, guarantees, Basel II and business intelligence. His responsibilities included application analysis and delivery, test planning, data-mart extraction, and leading four developers." },
+    { "id": 14, "image": "images/14.webp", "type": "personal_project", "date": "Personal project", "title": "LesApprenautes", "description": "Educational app project that reinvents the holiday workbook as an interactive adventure, helping children discover the places they visit while learning through play.", "next": 15,
+      "full_description": "LesApprenautes is a digital educational app project that turns the traditional holiday workbook into a playful, interactive adventure. Its goal is to let children discover the territories they visit on holiday while learning by having fun. The app would offer personalized holiday workbooks based on the chosen destination, with age-appropriate content on heritage, history, geography and the local economy. Children would take on activities, games, riddles and challenges tied to real places, explore illustrated maps, follow characters who accompany them, and keep their discoveries in a digital travel passport. Ideas include using technologies such as Google Street View to enrich exploration, offline operation for use during holidays, and parental controls. Regional content is planned, starting with the Basque Country, with possible partnerships with museums, castles, tourist offices and local players. The ambition is to combine education, tourism, culture and play so that every destination becomes a place of learning and adventure." },
+    { "id": 15, "image": "images/15.webp", "type": "professional", "date": "June 2009–April 2013", "title": "Euro Securities Partners / Crédit Agricole Titres", "description": "Project coordination and studies. Coordinated test and development environment refreshes, built accounting documentation tools, and contributed to the NICE project and its migration activities.", "next": 16,
+      "full_description": "From June 2009 to April 2013, he worked in project coordination and studies at Euro Securities Partners / Crédit Agricole Titres. He coordinated test and development environment refreshes, developed accounting documentation tools using Excel/VBA and PACBASE, and contributed to the NICE project through analysis, migration preparation, cutovers and reporting." },
+    { "id": 16, "image": "images/16.webp", "type": "hobby", "date": "Ongoing", "title": "Cycling adventures", "description": "Cycling and cycle touring.", "next": 17,
+      "full_description": "Cycling and cycle touring are among Jean-Michel’s interests. They offer a way to explore places at a human pace, enjoy the outdoors and take on longer journeys by bike." },
+    { "id": 17, "image": "images/17.webp", "type": "professional", "date": "June 2013–February 2014", "title": "PARTECIS", "description": "Technical coordination in card-payment back office. Fixed issues, delivered enhancements and provided PACBASE/DB2 support.", "next": 18,
+      "full_description": "From June 2013 to February 2014, he provided technical coordination for the card-payment back office at PARTECIS. He corrected defects, delivered application enhancements, supported PACBASE/DB2, and analyzed and specified work assigned to service centers." },
+    { "id": 18, "image": "images/18.webp", "type": "professional", "date": "February 2014–April 2017", "title": "Euro Securities Partners / Crédit Agricole Titres", "description": "Development methods and standards. Contributed to COBOL program templates, integrated debugging and file-management tools, trained users and developed Excel/VBA tools.", "next": 19,
+      "full_description": "From February 2014 to April 2017, he focused on development methods and standards at Euro Securities Partners / Crédit Agricole Titres. He contributed to COBOL program templates for the ICONE generator, helped integrate debugging and file-management tools, supported and trained developers, administered PACBASE data, created DB2/SPITAB tables, and built Excel/VBA tools." },
+    { "id": 19, "image": "images/19.webp", "type": "personal_project", "date": "Personal project", "title": "z/OS Assistant for Copilot", "description": "Open-source VS Code extension connecting GitHub Copilot Chat to z/OS through the Zowe SDK to manage datasets, monitor jobs and submit JCL using natural language.", "next": 20,
+      "full_description": "z/OS Assistant for Copilot is an open-source Visual Studio Code extension. It connects GitHub Copilot Chat to z/OS through the Zowe SDK, enabling developers to interact with mainframe resources using natural language—for example, managing datasets, monitoring jobs and submitting JCL." },
+    { "id": 20, "image": "images/20.webp", "type": "professional", "date": "April 2017–December 2022", "title": "Société Générale — Tech Lead", "description": "Worked on mainframe platform modernization, REST APIs on CICS, Event Driven Architecture integration and a software factory. Supported development teams and led a team of 3 to 5 people.", "next": 21,
+      "full_description": "From April 2017 to December 2022, Jean-Michel was a Tech Lead in Société Générale’s Mainframe Technical Architecture team. He contributed to mainframe modernization, designed and implemented REST APIs on CICS, connected the mainframe to an Event Driven Architecture platform, and helped create a software factory for project teams. He also supported COBOL compiler upgrades with Python parsers and monitoring tools, developed a warning-management application, and led a team of three to five people." },
+    { "id": 21, "image": "images/21.webp", "type": "hobby", "date": "Ongoing", "title": "Permaculture & local food", "description": "Permaculture and active participation in an AMAP (community-supported agriculture association).", "next": 22,
+      "full_description": "Jean-Michel is interested in permaculture and takes an active part in an AMAP, a community-supported agriculture association. This reflects an interest in growing practices and local food networks." },
+    { "id": 22, "image": "images/22.webp", "type": "professional", "date": "January 2023–December 2026", "title": "Société Générale — Software Product Owner zDevOps", "description": "Owns the strategy and roadmap for mainframe DevOps products, coordinates a team of 10, supports development workshops using Eclipse and Visual Studio Code, and oversees CI/CD and unit-testing tools.", "next": 23,
+      "full_description": "Since January 2023, he has been Software Product Owner for zDevOps at Société Générale. He owns the strategy and roadmap for mainframe DevOps products, coordinates a team of ten, manages two COBOL development workshops—one using Eclipse and one using Visual Studio Code—and oversees the continuous-integration toolchain based on Jenkins and GitHub Actions, together with unit-testing tools. He also works closely with users to gather needs and support adoption." },
+    { "id": 23, "image": "images/23.webp", "type": "hobby", "date": "Ongoing", "title": "Yoga", "description": "Regular yoga practice.", "next": 24,
+      "full_description": "Jean-Michel practices yoga, a way to stay flexible, find balance and unwind alongside a busy professional life." },
+    { "id": 24, "image": "images/24.webp", "type": "personal_project", "date": "Personal project", "title": "Automate4z", "description": "Design and development of a workflow orchestrator for z/OS and modern DevOps, bringing local and mainframe tasks together in YAML workflows.", "next": 25,
+      "full_description": "Automate4z is a personal product initiative: a workflow orchestrator designed for z/OS and modern DevOps. It brings local and mainframe operations together in YAML workflows, with the aim of making tasks such as JCL jobs, dataset operations, copybook handling, batch tests and CI/CD integration easier to describe and automate." },
+    { "id": 25, "image": "images/25.webp", "type": "professional", "date": "November 2025–December 2026", "title": "Société Générale — AI Core Team", "description": "Mainframe representative in the AI Core Team, contributing to GitHub Copilot adoption and supporting users.", "next": 26,
+      "full_description": "Since November 2025, he has been a member of Société Générale’s AI Core Team and the mainframe representative. He contributes to the adoption of GitHub Copilot, represents mainframe use cases and requirements, and supports users as they discover and adopt AI-assisted development." },
+    { "id": 26, "image": "images/26-arcad.webp", "image_fit": "contain", "type": "finish", "date": "2026-12-15", "title": "A new adventure begins!", "description": "Joining Arcad Software — December 15, 2026", "next": null,
+      "full_description": "On 15 December 2026, Jean-Michel is due to join Arcad Software. This final square marks the next chapter of the journey and the beginning of a new professional adventure." }
+  ]
+}
+</script>
+
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById('board-data').textContent);
+  const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = id => document.getElementById(id);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ---- Ordered path, following "next" links from the start square ---- */
+  const byId = new Map(DATA.tiles.map(t => [t.id, t]));
+  const first = DATA.tiles.find(t => t.type === 'start') || DATA.tiles[0];
+  const order = [];
+  for (let t = first, seen = new Set(); t && !seen.has(t.id); t = t.next != null ? byId.get(t.next) : null) {
+    seen.add(t.id); order.push(t);
+  }
+  const N = order.length;
+
+  /* ---- Icons (24px line icons, one per square) ---- */
+  const ICONS = {
+    star:'<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z"/>',
+    book:'<path d="M3 5.5c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6.5v13"/>',
+    atom:'<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/>',
+    tennis:'<ellipse cx="9.5" cy="9.5" rx="5.2" ry="6.2" transform="rotate(-45 9.5 9.5)"/><path d="M13.2 13.2l6.6 6.6"/><path d="M6.3 8.2l5.5 3.3M8.2 6.3l3.3 5.5"/><circle cx="19" cy="5" r="2.2"/>',
+    cap:'<path d="M2 9l10-4.5L22 9l-10 4.5z"/><path d="M6 11v4.5c0 1.5 3 3 6 3s6-1.5 6-3V11"/><path d="M22 9v5"/>',
+    floppy:'<path d="M4 4h13l3 3v13H4z"/><path d="M8 4v5h7V4"/><rect x="7" y="13" width="10" height="7"/>',
+    terminal:'<rect x="3" y="4" width="18" height="14" rx="1.5"/><path d="M7 9l3 2.5L7 14M12 14h5"/><path d="M8 21h8"/>',
+    euro:'<path d="M17.5 6.5a7 7 0 1 0 0 11"/><path d="M4 10.5h9M4 13.5h9"/>',
+    hammer:'<path d="M13.5 3.5l7 7-2.5 2.5-7-7z"/><path d="M12.3 8.2L4 16.5a1.5 1.5 0 0 0 2.1 2.1l8.3-8.3"/>',
+    checklist:'<rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M8 8.5l1.3 1.3L12 7M8 14.5l1.3 1.3L12 13M14 9h2.5M14 15h2.5"/>',
+    monitor:'<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M6 11h3l1.5-3 3 6 1.5-3H18"/><path d="M9 21h6M12 17v4"/>',
+    gauge:'<path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/><circle cx="12" cy="16" r="1.2"/><path d="M4 19.5h16"/>',
+    house:'<path d="M3 11l9-7 9 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>',
+    map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/><path d="M16.8 9.2l2 2M18.8 9.2l-2 2"/>',
+    database:'<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+    bike:'<circle cx="5.5" cy="16" r="3.5"/><circle cx="18.5" cy="16" r="3.5"/><path d="M5.5 16L9.5 9h6.5l2.5 7M9.5 9l3 7H5.5M16 9l-3.5 7M8 6.5h3.5M16 9l-.8-3h2.3"/>',
+    card:'<rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M2.5 10h19M6 15h4"/>',
+    braces:'<path d="M8 4c-2 0-2.5 1-2.5 3v2c0 1.5-1 3-2.5 3 1.5 0 2.5 1.5 2.5 3v2c0 2 .5 3 2.5 3M16 4c2 0 2.5 1 2.5 3v2c0 1.5 1 3 2.5 3-1.5 0-2.5 1.5-2.5 3v2c0 2-.5 3-2.5 3"/>',
+    chat:'<path d="M4 5h16v11H9l-5 4z"/><path d="M12 7.6l.9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9z"/>',
+    network:'<circle cx="12" cy="5" r="2"/><circle cx="5" cy="18.5" r="2"/><circle cx="19" cy="18.5" r="2"/><circle cx="12" cy="12.5" r="2"/><path d="M12 7v3.5M10.4 13.8l-3.8 3.2M13.6 13.8l3.8 3.2"/>',
+    sprout:'<path d="M12 21v-9"/><path d="M12 12C12 8 9 6 4.5 6c0 4 3 6 7.5 6z"/><path d="M12 10c0-3.5 2.5-6 7.5-6 0 4-3 6-7.5 6z"/><path d="M6 21h12"/>',
+    pipeline:'<path d="M12 12c-2-2.8-3.6-4.5-6-4.5a4.5 4.5 0 0 0 0 9c2.4 0 4-1.7 6-4.5s3.6-4.5 6-4.5a4.5 4.5 0 0 1 0 9c-2.4 0-4-1.7-6-4.5z"/>',
+    lotus:'<path d="M12 5c2 2.5 2.5 5.5 0 10-2.5-4.5-2-7.5 0-10z"/><path d="M12 15c-3-.5-6-2.5-7-6 3 0 5.5 1.5 7 6zM12 15c3-.5 6-2.5 7-6-3 0-5.5 1.5-7 6z"/><path d="M4 18.5c2.5 1.5 13.5 1.5 16 0"/>',
+    workflow:'<rect x="3" y="3.5" width="6" height="5" rx="1"/><rect x="15" y="9.5" width="6" height="5" rx="1"/><rect x="3" y="15.5" width="6" height="5" rx="1"/><path d="M9 6h3v12H9M12 12h3"/>',
+    robot:'<rect x="5" y="8" width="14" height="11" rx="2.5"/><path d="M12 4.5V8"/><circle cx="12" cy="3.5" r="1"/><circle cx="9.5" cy="13" r="1.2"/><circle cx="14.5" cy="13" r="1.2"/><path d="M10 16.5h4M3 12v3M21 12v3"/>',
+    flag:'<path d="M5 21V4"/><path d="M5 4h13l-2.5 4L18 12H5"/>'
+  };
+  const ICON_BY_ID = {1:'star',2:'book',3:'atom',4:'tennis',5:'cap',6:'floppy',7:'terminal',8:'euro',9:'hammer',10:'checklist',
+    11:'monitor',12:'gauge',13:'house',14:'map',15:'database',16:'bike',17:'card',18:'braces',19:'chat',20:'network',
+    21:'sprout',22:'pipeline',23:'lotus',24:'workflow',25:'robot',26:'flag'};
+  const ICON_BY_TYPE = {start:'star', finish:'flag', education:'cap', professional:'terminal', hobby:'sprout', personal_project:'braces'};
+  const svgIcon = key => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[key] || ICONS.star}</svg>`;
+  const iconFor = t => svgIcon(ICON_BY_ID[t.id] || ICON_BY_TYPE[t.type]);
+
+  /* ---- Colour helpers: pick readable text on each type colour ---- */
+  function lum(hex){
+    const h = hex.replace('#','');
+    const c = [0,2,4].map(i => parseInt(h.slice(i,i+2),16)/255).map(v => v <= .03928 ? v/12.92 : Math.pow((v+.055)/1.055, 2.4));
+    return .2126*c[0] + .7152*c[1] + .0722*c[2];
+  }
+  const onColor = hex => { const L = lum(hex); return (1.05/(L+.05)) >= ((L+.05)/(lum('#1D2924')+.05)) ? '#FFFFFF' : '#1D2924'; };
+  const styleOf = t => DATA.style[t.type] || {color:'#888888', label:t.type};
+
+  /* ---- Text helpers ---- */
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  function shortDate(d){
+    if (ISO.test(d)) return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const ys = d.match(/\b(19|20)\d{2}\b/g);
+    if (ys){ const u = [...new Set(ys)]; return u.length > 1 ? `${u[0]}–${u[u.length-1]}` : u[0]; }
+    return d;
+  }
+  const longDate = d => ISO.test(d) ? new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : d;
+  function parts(t){
+    if (t.type === 'start' || t.type === 'finish') return {main:t.title, sub:(t.description||'').split(' — ')[0]};
+    const i = t.title.indexOf(' — ');
+    return i > 0 ? {main:t.title.slice(0,i), sub:t.title.slice(i+3)} : {main:t.title, sub:''};
+  }
+  const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const linkify = s => esc(s).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  const pad2 = n => String(n).padStart(2,'0');
+
+  /* ---- Header ---- */
+  const [t1, ...rest] = DATA.board.title.split(', ');
+  $('title').innerHTML = rest.length ? `${esc(t1)}, <span>${esc(rest.join(', '))}</span>` : esc(DATA.board.title);
+  $('subtitle').textContent = DATA.board.subtitle || '';
+  if (DATA.board.path_image){ $('cobbleImg').setAttribute('href', DATA.board.path_image); $('roadBed').style.stroke = 'url(#cobble)'; }
+  if (DATA.board.board_image) $('board').style.setProperty('--board-img', `url("${DATA.board.board_image}")`);
+  if (DATA.board.pawn_image){
+    const pImg = $('pawnImg');
+    pImg.addEventListener('load', () => {
+      $('pawnPic').hidden = false; $('pawnSvg').style.display = 'none';
+      $('pawn').classList.add('is-pic');
+      requestAnimationFrame(() => placePawn(pos, false));
+    });
+    pImg.src = DATA.board.pawn_image;
+  }
+  if (DATA.board.hub_image) $('hub').style.setProperty('--hub-img', `url("${DATA.board.hub_image}")`);
+  const y0 = (order[0].date.match(/\d{4}/)||[''])[0], y1 = (order[N-1].date.match(/\d{4}/)||[''])[0];
+  $('eyebrow').textContent = `${y0} → ${y1} · ${N} squares`;
+
+  /* ---- Legend ---- */
+  const legend = $('legend');
+  const seenTypes = new Set();
+  Object.entries(DATA.style).forEach(([k, s]) => {
+    if (k === 'finish') return;
+    const label = k === 'start' ? 'Start / Finish' : s.label;
+    if (seenTypes.has(label)) return; seenTypes.add(label);
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="dot" style="--c:${s.color}"></span>${esc(label)}`;
+    legend.appendChild(li);
+  });
+
+  /* ---- Finish banner: red ribbon between two chequered flags ---- */
+  const FINISH_BANNER = `<span class="finish-banner"><svg viewBox="0 0 260 84" aria-hidden="true">
+    <defs><pattern id="chk" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#1D2924"/><rect width="4" height="4" fill="#FFFFFF"/><rect x="4" y="4" width="4" height="4" fill="#FFFFFF"/></pattern></defs>
+    <g id="flagL"><path d="M10 4v76" stroke="#6B4A2B" stroke-width="4" stroke-linecap="round"/>
+      <path d="M12 6q18-7 36 1-6 12 0 24-18-8-36-1z" fill="url(#chk)" stroke="#1D2924" stroke-width="2" stroke-linejoin="round"/></g>
+    <use href="#flagL" transform="translate(260 0) scale(-1 1)"/>
+    <path d="M44 40h26v32H44l8-16z" fill="#9E2A1E" stroke="#6E1A12" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M216 40h-26v32h26l-8-16z" fill="#9E2A1E" stroke="#6E1A12" stroke-width="2" stroke-linejoin="round"/>
+    <rect x="58" y="24" width="144" height="46" rx="7" fill="#D6402F" stroke="#7A1F15" stroke-width="2"/>
+    <path d="M66 30h128" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="130" y="57" text-anchor="middle" fill="#FFFFFF">FINISH</text>
+  </svg></span>`;
+
+  /* ---- Build tiles ---- */
+  const board = $('board'), hub = $('hub'), pawn = $('pawn');
+  const tileEls = order.map((t, i) => {
+    const s = styleOf(t), p = parts(t);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `tile t-${t.type}`;
+    b.style.setProperty('--tc', s.color);
+    b.style.setProperty('--tc-on', onColor(s.color));
+    if (s.frame){ b.classList.add('has-frame'); b.style.setProperty('--frame-img', `url("${s.frame}")`); }
+    b.title = t.description || '';
+    b.setAttribute('aria-label', `Square ${i+1}: ${t.title}, ${t.date}`);
+    const chip = t.type === 'start' ? '<span class="chip">START</span>' : (t.type === 'finish' && !t.image) ? '<span class="chip">FINISH</span>' : '';
+    const banner = t.type === 'finish' ? FINISH_BANNER : '';
+    const showDate = !(t.type === 'start' || t.type === 'finish');
+    const text = `<span class="ttl">${esc(p.main)}</span>` + (p.sub ? `<span class="sub">${esc(p.sub)}</span>` : '');
+    if (t.image){
+      b.classList.add('has-pic');
+      b.innerHTML =
+        `<span class="pic${t.image_fit === 'contain' ? ' contain' : ''}"><span class="pic-ico">${iconFor(t)}</span><img src="${esc(t.image)}" alt="" decoding="async">` +
+        banner + `<span class="tile-top"><span class="num">${i+1}</span>${chip}</span>` +
+        (showDate ? `<span class="when">${esc(shortDate(t.date))}</span>` : '') + `</span>` +
+        `<span class="txt">${text}</span>`;
+      const img = b.querySelector('img');
+      img.addEventListener('error', () => { img.hidden = true; });
+      img.addEventListener('load', () => requestAnimationFrame(redraw));
+    } else {
+      b.classList.add('no-pic');
+      b.innerHTML =
+        `<span class="txt"><span class="tile-top"><span class="num">${i+1}</span>${chip}<span class="ico">${iconFor(t)}</span></span>` +
+        (showDate ? `<span class="date">${esc(shortDate(t.date))}</span>` : '') + text + `</span>`;
+    }
+    b.addEventListener('click', () => openCard(i));
+    board.insertBefore(b, pawn);
+    return b;
+  });
+
+  /* ---- Layouts: spiral around the hub (wide) or zigzag trail (narrow) ---- */
+  function spiral(n, C){
+    for (let R = 5; R <= 9; R++){
+      const P = 2*C + 2*R - 4;
+      if (n > P && n <= P + (C-2)){
+        const cells = [];
+        for (let c = 0; c < C; c++) cells.push([0,c]);
+        for (let r = 1; r < R; r++) cells.push([r,C-1]);
+        for (let c = C-2; c >= 0; c--) cells.push([R-1,c]);
+        for (let r = R-2; r >= 1; r--) cells.push([r,0]);
+        const k = n - P;
+        for (let c = 1; c <= k; c++) cells.push([1,c]);
+        const out = cells.map(([r,c]) => ({r, c, span:1}));
+        out[n-1].span = (C-2) - k + 1;
+        return {cols:C, cells:out, hub:{r0:2, r1:R-2, c0:1, c1:C-2}};
+      }
+    }
+    return null;
+  }
+  function snake(n, K){
+    const cells = [];
+    for (let i = 0; i < n; i++){
+      const row = Math.floor(i/K);
+      cells.push({r:row+1, c: row % 2 === 0 ? i % K : K-1-(i % K), span:1});
+    }
+    return {cols:K, cells, hub:{r0:0, r1:0, c0:0, c1:K-1}};
+  }
+
+  let lastW = -1;
+  function applyLayout(){
+    const w = board.clientWidth;
+    lastW = w;
+    const compact = w < 860;
+    document.documentElement.toggleAttribute('data-compact', compact);
+    const L = (!compact && spiral(N, 8)) || snake(N, compact ? (w >= 520 ? 3 : 2) : 6);
+    board.style.setProperty('--cols', L.cols);
+    L.cells.forEach((cell, i) => {
+      tileEls[i].style.gridRow = `${cell.r+1}`;
+      tileEls[i].style.gridColumn = `${cell.c+1} / span ${cell.span}`;
+      tileEls[i].classList.toggle('is-wide', cell.span > 1);
+    });
+    hub.style.gridRow = `${L.hub.r0+1} / ${L.hub.r1+2}`;
+    hub.style.gridColumn = `${L.hub.c0+1} / ${L.hub.c1+2}`;
+    requestAnimationFrame(redraw);
+  }
+  function center(el){ return [el.offsetLeft + el.offsetWidth/2, el.offsetTop + el.offsetHeight/2]; }
+  function drawRoad(){
+    const road = $('road');
+    road.setAttribute('viewBox', `0 0 ${board.clientWidth} ${board.clientHeight}`);
+    const d = tileEls.map((el, i) => (i ? 'L' : 'M') + center(el).map(v => v.toFixed(1)).join(' ')).join(' ');
+    $('roadBed').setAttribute('d', d);
+    $('roadEdge').setAttribute('d', d);
+    $('roadShade').setAttribute('d', d);
+  }
+  function redraw(){ drawRoad(); placePawn(pos, false); }
+
+  new ResizeObserver(() => {
+    if (Math.abs(board.clientWidth - lastW) > 1) applyLayout();
+    else requestAnimationFrame(redraw);
+  }).observe(board);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(redraw));
+
+  /* ---- Pawn ---- */
+  let pos = 0;
+  const visited = new Set([0]);
+  function placePawn(i, animate){
+    const el = tileEls[i];
+    const pw = pawn.offsetWidth, ph = pawn.offsetHeight;
+    const x = el.offsetLeft + el.offsetWidth - pw - 8, y = el.offsetTop - Math.round(ph * .6);
+    if (!animate) pawn.style.transition = 'none';
+    pawn.style.transform = `translate(${x}px, ${y}px)`;
+    if (!animate){ void pawn.offsetWidth; pawn.style.transition = ''; }
+  }
+  function hop(){ if (REDUCE) return; pawn.classList.remove('hop'); void pawn.offsetWidth; pawn.classList.add('hop'); }
+  function ensureVisible(i){
+    if (!document.documentElement.hasAttribute('data-compact')) return;
+    const r = tileEls[i].getBoundingClientRect();
+    if (r.top < 60 || r.bottom > innerHeight - 120) tileEls[i].scrollIntoView({block:'center', behavior: REDUCE ? 'auto' : 'smooth'});
+  }
+
+  /* ---- Die ---- */
+  const cube = $('cube');
+  const PIPS = {1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+  for (let f = 1; f <= 6; f++){
+    const face = document.createElement('span');
+    face.className = `face f${f}`;
+    PIPS[f].forEach(p => {
+      const pip = document.createElement('span');
+      pip.className = 'pip';
+      pip.style.gridRow = String(Math.ceil(p/3));
+      pip.style.gridColumn = String((p-1) % 3 + 1);
+      face.appendChild(pip);
+    });
+    cube.appendChild(face);
+  }
+  const SHOW = {1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
+  let spinA = 0, spinB = 0;
+  function spinDie(n){
+    spinA += 2 + Math.floor(Math.random()*2);
+    spinB += 1 + Math.floor(Math.random()*2);
+    const [rx, ry] = SHOW[n];
+    cube.style.transform = `rotateX(${rx + 360*spinA}deg) rotateY(${ry + 360*spinB}deg)`;
+    return sleep(REDUCE ? 80 : 1000);
+  }
+  function rollValue(){
+    try { const a = new Uint32Array(1); crypto.getRandomValues(a); return 1 + (a[0] % 6); }
+    catch { return 1 + Math.floor(Math.random()*6); }
+  }
+
+  /* ---- Job log (a small JES-style terminal) ---- */
+  const term = $('term');
+  function log(line){
+    const li = document.createElement('li');
+    li.textContent = line;
+    term.appendChild(li);
+    while (term.children.length > 5) term.removeChild(term.firstChild);
+  }
+  function bootLog(){
+    term.innerHTML = '';
+    log(`//JMICHEL JOB (${y0}),'ROLL THE DICE',CLASS=A`);
+    log(`$HASP373 JMICHEL STARTED - ${shortDate(order[0].date).toUpperCase()}`);
+  }
+
+  /* ---- Status & controls ---- */
+  const rollBtn = $('rollBtn'), stepBtn = $('stepBtn'), resetBtn = $('resetBtn'), dieBtn = $('dieBtn');
+  let busy = false;
+  function updateUI(){
+    tileEls.forEach((el, i) => {
+      el.classList.toggle('is-here', i === pos);
+      el.classList.toggle('is-visited', visited.has(i) && i !== pos);
+    });
+    const done = pos >= N-1;
+    $('status').innerHTML = `Square <b>${pos+1}</b> of ${N} · ${esc(parts(order[pos]).main)}`;
+    rollBtn.textContent = done ? 'Play again' : 'Roll the dice';
+    $('mRoll').textContent = done ? 'Play again' : 'Roll the dice';
+    rollBtn.disabled = busy;
+    dieBtn.disabled = busy;
+    stepBtn.disabled = busy || done;
+    resetBtn.disabled = busy || pos === 0;
+  }
+  function setBusy(b){ busy = b; updateUI(); }
+
+  async function moveBy(steps){
+    for (let s = 0; s < steps; s++){
+      pos++; visited.add(pos);
+      placePawn(pos, !REDUCE); hop(); updateUI(); ensureVisible(pos);
+      await sleep(REDUCE ? 140 : 360);
+    }
+  }
+  function landed(){
+    const t = order[pos];
+    log(`STEP${pad2(pos+1)} RC=0000 ${parts(t).main.toUpperCase()}`);
+    if (pos >= N-1){
+      log('$HASP395 JMICHEL ENDED - RC=0000');
+      log(`NEXT JOB: ${(DATA.board.finish && DATA.board.finish.label || parts(t).sub).toUpperCase()}`);
+      confetti();
+    }
+    openCard(pos);
+  }
+  async function roll(){
+    if (busy) return;
+    if (pos >= N-1){ restart(); return; }
+    closeCard(false);
+    setBusy(true);
+    const r = rollValue();
+    await spinDie(r);
+    const steps = Math.min(r, N-1-pos);
+    log(steps < r ? `ROLL ${r} -> ADVANCE ${steps} (FINISH LINE)` : `ROLL ${r} -> ADVANCE ${steps}`);
+    await moveBy(steps);
+    await sleep(220);
+    busy = false; updateUI();
+    landed();
+  }
+  async function step(){
+    if (busy || pos >= N-1) return;
+    closeCard(false);
+    setBusy(true);
+    await moveBy(1);
+    await sleep(160);
+    busy = false; updateUI();
+    landed();
+  }
+  function restart(){
+    if (busy) return;
+    closeCard(false);
+    pos = 0; visited.clear(); visited.add(0);
+    placePawn(0, !REDUCE); hop();
+    bootLog(); updateUI(); ensureVisible(0);
+  }
+  rollBtn.addEventListener('click', roll);
+  dieBtn.addEventListener('click', roll);
+  stepBtn.addEventListener('click', step);
+  resetBtn.addEventListener('click', restart);
+
+  /* ---- Story card ---- */
+  const overlay = $('overlay'), sheet = $('sheet');
+  let viewing = 0, lastFocus = null;
+  function fillCard(i){
+    viewing = i;
+    const t = order[i], s = styleOf(t), p = parts(t);
+    sheet.style.setProperty('--tc', s.color);
+    sheet.style.setProperty('--tc-on', onColor(s.color));
+    $('mPic').classList.toggle('has-frame', !!s.frame);
+    if (s.frame) sheet.style.setProperty('--frame-img', `url("${s.frame}")`);
+    $('mNum').textContent = `Square ${pad2(i+1)} / ${N}`;
+    $('mType').textContent = s.label;
+    $('mIco').innerHTML = iconFor(t);
+    const mImg = $('mImg');
+    mImg.onerror = () => { $('mPic').hidden = true; $('mIco').hidden = false; $('mHead').classList.remove('has-pic'); };
+    if (t.image){ mImg.src = t.image; $('mPic').hidden = false; $('mIco').hidden = true; $('mHead').classList.add('has-pic'); }
+    else { mImg.removeAttribute('src'); $('mPic').hidden = true; $('mIco').hidden = false; $('mHead').classList.remove('has-pic'); }
+    $('mDate').textContent = longDate(t.date);
+    $('mTitle').textContent = p.main;
+    $('mSub').textContent = p.sub;
+    $('mSub').hidden = !p.sub;
+    $('mText').innerHTML = linkify(t.full_description || t.description || '');
+    $('mPrev').disabled = i === 0;
+    $('mNext').disabled = i === N-1;
+    sheet.querySelector('.sheet-body').scrollTop = 0;
+  }
+  function openCard(i){
+    if (overlay.hidden) lastFocus = document.activeElement;
+    fillCard(i);
+    overlay.hidden = false;
+    $('mRoll').focus({preventScroll:true});
+  }
+  function closeCard(restoreFocus = true){
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    if (restoreFocus && lastFocus && lastFocus.focus) lastFocus.focus({preventScroll:true});
+  }
+  $('mClose').addEventListener('click', () => closeCard());
+  $('mDone').addEventListener('click', () => closeCard());
+  $('mRoll').addEventListener('click', () => { closeCard(false); roll(); });
+  $('mPrev').addEventListener('click', () => viewing > 0 && fillCard(viewing-1));
+  $('mNext').addEventListener('click', () => viewing < N-1 && fillCard(viewing+1));
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCard(); });
+
+  document.addEventListener('keydown', e => {
+    if (!overlay.hidden){
+      if (e.key === 'Escape'){ e.preventDefault(); closeCard(); }
+      else if (e.key === 'ArrowRight' && viewing < N-1) fillCard(viewing+1);
+      else if (e.key === 'ArrowLeft' && viewing > 0) fillCard(viewing-1);
+      else if (e.key === 'Tab'){
+        const f = [...sheet.querySelectorAll('button:not([disabled]), a[href]')];
+        if (!f.length) return;
+        const firstEl = f[0], lastEl = f[f.length-1];
+        if (e.shiftKey && document.activeElement === firstEl){ e.preventDefault(); lastEl.focus(); }
+        else if (!e.shiftKey && document.activeElement === lastEl){ e.preventDefault(); firstEl.focus(); }
+      }
+      return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const onControl = /^(BUTTON|A|INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
+    if ((e.key === ' ' && !onControl) || e.key === 'r' || e.key === 'R'){ e.preventDefault(); roll(); }
+    else if (e.key === 'ArrowRight' || e.key === 'n' || e.key === 'N'){ e.preventDefault(); step(); }
+  });
+
+  /* ---- Finish-line confetti ---- */
+  function confetti(){
+    if (REDUCE) return;
+    const cv = $('confetti'), ctx = cv.getContext('2d'), dpr = window.devicePixelRatio || 1;
+    cv.hidden = false;
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    ctx.scale(dpr, dpr);
+    const colors = Object.values(DATA.style).map(s => s.color);
+    const P = Array.from({length:170}, () => ({
+      x: innerWidth/2 + (Math.random()-.5)*240, y: innerHeight*.38,
+      vx: (Math.random()-.5)*14, vy: -Math.random()*13 - 4,
+      w: Math.random()*7 + 5, rot: Math.random()*6, vr: (Math.random()-.5)*.35,
+      c: colors[Math.floor(Math.random()*colors.length)]
+    }));
+    const t0 = performance.now();
+    (function frame(now){
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      P.forEach(p => {
+        p.vy += .32; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.w/2, -p.w/4, p.w, p.w/2);
+        ctx.restore();
+      });
+      if (now - t0 < 3400) requestAnimationFrame(frame);
+      else { ctx.clearRect(0, 0, innerWidth, innerHeight); cv.hidden = true; }
+    })(t0);
+  }
+
+  /* ---- Start ---- */
+  bootLog();
+  applyLayout();
+  updateUI();
+})();
+</script>
+</body>
+</html>
