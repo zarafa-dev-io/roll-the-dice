@@ -317,6 +317,15 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
 .m-title{margin:2px 0 0; font-family:var(--f-display); font-weight:400; font-size:clamp(24px, 4vw, 31px); line-height:1.08; text-wrap:balance}
 .m-sub{margin:0 0 10px; font-weight:700; color:color-mix(in srgb, var(--tc) 60%, var(--ink))}
 .m-text{margin:0; font-size:16px; line-height:1.62; max-width:62ch}
+.m-links{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
+.m-links:empty{display:none}
+.m-link{display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border-radius:999px; text-decoration:none;
+  font:700 14px/1.2 var(--f-body); color:var(--tc-on); background:var(--tc);
+  box-shadow:0 3px 0 color-mix(in srgb, var(--tc) 55%, #000)}
+.m-link:hover{filter:brightness(1.06)}
+.m-link:active{transform:translateY(2px); box-shadow:0 1px 0 color-mix(in srgb, var(--tc) 55%, #000)}
+.m-link:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.m-link svg{width:16px; height:16px; flex:none}
 .m-text a{color:var(--accent); text-underline-offset:3px; word-break:break-all}
 .sheet-foot{display:flex; align-items:center; gap:8px; padding:14px 18px 18px; flex-wrap:wrap}
 .sheet-foot .spacer{flex:1}
@@ -408,6 +417,7 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
       </div>
       <p class="m-sub" id="mSub"></p>
       <p class="m-text" id="mText"></p>
+      <div class="m-links" id="mLinks"></div>
     </div>
     <div class="sheet-foot">
       <button class="nav-btn" id="mPrev" type="button" aria-label="Previous square"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -482,7 +492,7 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
       "full_description": "From June 2013 to February 2014, he provided technical coordination for the card-payment back office at PARTECIS. He corrected defects, delivered application enhancements, supported PACBASE/DB2, and analyzed and specified work assigned to service centers." },
     { "id": 18, "image": "images/18.webp", "type": "professional", "date": "February 2014–April 2017", "title": "Euro Securities Partners / Crédit Agricole Titres", "description": "Development methods and standards. Contributed to COBOL program templates, integrated debugging and file-management tools, trained users and developed Excel/VBA tools.", "next": 19,
       "full_description": "From February 2014 to April 2017, he focused on development methods and standards at Euro Securities Partners / Crédit Agricole Titres. He contributed to COBOL program templates for the ICONE generator, helped integrate debugging and file-management tools, supported and trained developers, administered PACBASE data, created DB2/SPITAB tables, and built Excel/VBA tools." },
-    { "id": 19, "image": "images/19.webp", "type": "personal_project", "date": "Personal project", "title": "z/OS Assistant for Copilot", "description": "Open-source VS Code extension connecting GitHub Copilot Chat to z/OS through the Zowe SDK to manage datasets, monitor jobs and submit JCL using natural language.", "next": 20,
+    { "id": 19, "image": "images/19.webp", "links": [{ "label": "View on the VS Code Marketplace", "url": "https://marketplace.visualstudio.com/items?itemName=zarafa-dev-io.zos-copilot-assistant" }], "type": "personal_project", "date": "Personal project", "title": "z/OS Assistant for Copilot", "description": "Open-source VS Code extension connecting GitHub Copilot Chat to z/OS through the Zowe SDK to manage datasets, monitor jobs and submit JCL using natural language.", "next": 20,
       "full_description": "z/OS Assistant for Copilot is an open-source Visual Studio Code extension. It connects GitHub Copilot Chat to z/OS through the Zowe SDK, enabling developers to interact with mainframe resources using natural language—for example, managing datasets, monitoring jobs and submitting JCL." },
     { "id": 20, "image": "images/20.webp", "type": "professional", "date": "April 2017–December 2022", "title": "Société Générale — Tech Lead", "description": "Worked on mainframe platform modernization, REST APIs on CICS, Event Driven Architecture integration and a software factory. Supported development teams and led a team of 3 to 5 people.", "next": 21,
       "full_description": "From April 2017 to December 2022, Jean-Michel was a Tech Lead in Société Générale’s Mainframe Technical Architecture team. He contributed to mainframe modernization, designed and implemented REST APIs on CICS, connected the mainframe to an Event Driven Architecture platform, and helped create a software factory for project teams. He also supported COBOL compiler upgrades with Python parsers and monitoring tools, developed a warning-management application, and led a team of three to five people." },
@@ -492,7 +502,7 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
       "full_description": "Since January 2023, he has been Software Product Owner for zDevOps at Société Générale. He owns the strategy and roadmap for mainframe DevOps products, coordinates a team of ten, manages two COBOL development workshops—one using Eclipse and one using Visual Studio Code—and oversees the continuous-integration toolchain based on Jenkins and GitHub Actions, together with unit-testing tools. He also works closely with users to gather needs and support adoption." },
     { "id": 23, "image": "images/23.webp", "type": "hobby", "date": "Ongoing", "title": "Yoga", "description": "Regular yoga practice.", "next": 24,
       "full_description": "Jean-Michel practices yoga, a way to stay flexible, find balance and unwind alongside a busy professional life." },
-    { "id": 24, "image": "images/24.webp", "type": "personal_project", "date": "Personal project", "title": "Automate4z", "description": "Design and development of a workflow orchestrator for z/OS and modern DevOps, bringing local and mainframe tasks together in YAML workflows.", "next": 25,
+    { "id": 24, "image": "images/24.webp", "links": [{ "label": "Read the Automate4z documentation", "url": "https://zarafa-dev-io.github.io/automate4z-docs/" }], "type": "personal_project", "date": "Personal project", "title": "Automate4z", "description": "Design and development of a workflow orchestrator for z/OS and modern DevOps, bringing local and mainframe tasks together in YAML workflows.", "next": 25,
       "full_description": "Automate4z is a personal product initiative: a workflow orchestrator designed for z/OS and modern DevOps. It brings local and mainframe operations together in YAML workflows, with the aim of making tasks such as JCL jobs, dataset operations, copybook handling, batch tests and CI/CD integration easier to describe and automate." },
     { "id": 25, "image": "images/25.webp", "type": "professional", "date": "November 2025–December 2026", "title": "Société Générale — AI Core Team", "description": "Mainframe representative in the AI Core Team, contributing to GitHub Copilot adoption and supporting users.", "next": 26,
       "full_description": "Since November 2025, he has been a member of Société Générale’s AI Core Team and the mainframe representative. He contributes to the adoption of GitHub Copilot, represents mainframe use cases and requirements, and supports users as they discover and adopt AI-assisted development." },
@@ -891,6 +901,9 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
     $('mSub').textContent = p.sub;
     $('mSub').hidden = !p.sub;
     $('mText').innerHTML = linkify(t.full_description || t.description || '');
+    $('mLinks').innerHTML = (t.links || []).filter(l => /^https?:\/\//.test(l.url || '')).map(l =>
+      `<a class="m-link" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label || l.url)}` +
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>`).join('');
     $('mPrev').disabled = i === 0;
     $('mNext').disabled = i === N-1;
     sheet.querySelector('.sheet-body').scrollTop = 0;

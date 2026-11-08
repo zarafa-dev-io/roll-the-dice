@@ -14,7 +14,8 @@ inside `index.html`:
 - `style`: one entry per square type, with its color, legend label and painted `frame`.
 - `tiles`: the squares. The path follows the `next` links from the `start` square.
   Each square can have an `image`; add `"image_fit": "contain"` to show a logo
-  whole instead of filling the picture area.
+  whole instead of filling the picture area, and a `links` list
+  (`[{ "label": "…", "url": "https://…" }]`) shown as buttons in its story card.
 
 ## Images
 
