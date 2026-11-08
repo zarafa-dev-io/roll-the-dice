@@ -27,5 +27,6 @@ inside `index.html`:
 
 ## Controls
 
-Space or the die rolls · → moves one square · click a square to read its story.
+Space or the die rolls · → moves one square · click a square (or use the arrows in its
+story card) to send the pawn there and read its story.
 Fonts load from Google Fonts; without a connection the page falls back to system fonts.
