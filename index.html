@@ -759,10 +759,22 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
     if (!animate){ void pawn.offsetWidth; pawn.style.transition = ''; }
   }
   function hop(){ if (REDUCE) return; pawn.classList.remove('hop'); void pawn.offsetWidth; pawn.classList.add('hop'); }
+  /* Auto-scroll: keep the square the pawn is on (pawn included) inside the visible area,
+     accounting for the fixed controls bar on compact screens. Works on any screen height. */
+  const controlsEl = document.querySelector('.controls');
   function ensureVisible(i){
-    if (!document.documentElement.hasAttribute('data-compact')) return;
-    const r = tileEls[i].getBoundingClientRect();
-    if (r.top < 60 || r.bottom > innerHeight - 120) tileEls[i].scrollIntoView({block:'center', behavior: REDUCE ? 'auto' : 'smooth'});
+    const el = tileEls[i];
+    if (!el) return;
+    const r = el.getBoundingClientRect();                            // already includes the jitter transform
+    const top = r.top - Math.round(pawn.offsetHeight * .6);          // pawn sticks out above the tile
+    const bottom = r.bottom;
+    const fixedBar = document.documentElement.hasAttribute('data-compact') && controlsEl ? controlsEl.offsetHeight : 0;
+    const viewTop = 12, viewBottom = innerHeight - fixedBar - 12;
+    if (top >= viewTop && bottom <= viewBottom) return;
+    // Center the square in the visible band (or align its top if it is taller than the band)
+    const band = viewBottom - viewTop, h = bottom - top;
+    const delta = h >= band ? top - viewTop : (top + bottom) / 2 - (viewTop + viewBottom) / 2;
+    window.scrollTo({top: Math.max(0, scrollY + delta), behavior: REDUCE ? 'auto' : 'smooth'});
   }
 
   /* ---- Die ---- */
@@ -855,7 +867,7 @@ kbd{font:500 11.5px/1 var(--f-mono); padding:3px 6px; border-radius:5px; backgro
       if (token !== walkToken) return;
       pos += dir;
       if (dir > 0) visited.add(pos);
-      placePawn(pos, !REDUCE); hop(); updateUI();
+      placePawn(pos, !REDUCE); hop(); updateUI(); ensureVisible(pos);
       if (delay) await sleep(delay);
     }
     if (token !== walkToken) return;
